@@ -2,12 +2,46 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>グループ振り分けくじ</title>
   <style>
-    body { font-family: sans-serif; text-align: center; margin-top: 30px; }
-    input, button { font-size: 1em; padding: 5px; margin: 5px; }
-    #result { margin-top: 20px; font-size: 2em; font-weight: bold; }
-    #remaining { margin-top: 10px; font-size: 1em; color: gray; white-space: pre-wrap; }
+    * { box-sizing: border-box; }
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      padding: 20px;
+      margin: 0;
+    }
+    h1 {
+      font-size: 1.8em;
+      margin-bottom: 20px;
+    }
+    input, button {
+      font-size: 1.2em;
+      padding: 10px;
+      margin: 8px 4px;
+      width: 90%;
+      max-width: 300px;
+    }
+    button {
+      cursor: pointer;
+    }
+    #result {
+      margin-top: 20px;
+      font-size: 1.5em;
+      font-weight: bold;
+    }
+    #remaining {
+      margin-top: 10px;
+      font-size: 1em;
+      color: gray;
+      white-space: pre-wrap;
+    }
+    @media (min-width: 600px) {
+      input, button {
+        width: auto;
+      }
+    }
   </style>
 </head>
 <body>
