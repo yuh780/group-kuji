@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>グループ振り分けくじ</title>
+  <style>
+    body { font-family: sans-serif; text-align: center; margin-top: 30px; }
+    input, button { font-size: 1em; padding: 5px; margin: 5px; }
+    #result { margin-top: 20px; font-size: 2em; font-weight: bold; }
+    #remaining { margin-top: 10px; font-size: 1em; color: gray; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <h1>グループ振り分けくじ</h1>
+
+  <div id="setup">
+    <p>グループ数：<input type="number" id="groupCount" min="1" max="26" value="5"></p>
+    <p>各グループの定員：<input type="number" id="groupLimit" min="1" value="8"></p>
+    <button onclick="initialize()">設定して開始</button>
+  </div>
+
+  <div id="main" style="display:none;">
+    <button onclick="draw()">くじをひく</button>
+    <button onclick="undo()" id="undoBtn" disabled>ひとつ前に戻す</button>
+    <div id="result"></div>
+    <div id="remaining"></div>
+  </div>
+
+  <script>
+    let groupCounts = {};
+    let groupLimit = 8;
+    let lastDraw = null;
+
+    function initialize() {
+      const groupCount = parseInt(document.getElementById('groupCount').value);
+      groupLimit = parseInt(document.getElementById('groupLimit').value);
+
+      if (isNaN(groupCount) || isNaN(groupLimit) || groupCount < 1 || groupCount > 26) {
+        alert("グループ数は1〜26、定員は1以上で入力してください");
+        return;
+      }
+
+      groupCounts = {};
+      const groupLabels = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+      for (let i = 0; i < groupCount; i++) {
+        groupCounts[groupLabels[i]] = 0;
+      }
+
+      document.getElementById('setup').style.display = "none";
+      document.getElementById('main').style.display = "block";
+      document.getElementById('result').textContent = "";
+      document.getElementById('undoBtn').disabled = true;
+      updateRemaining();
+    }
+
+    function draw() {
+      const availableGroups = Object.entries(groupCounts)
+        .filter(([_, count]) => count < groupLimit);
+
+      if (availableGroups.length === 0) {
+        document.getElementById('result').textContent = "すべてのグループが満員です！";
+        document.getElementById('remaining').textContent = "";
+        return;
+      }
+
+      const randomIndex = Math.floor(Math.random() * availableGroups.length);
+      const group = availableGroups[randomIndex][0];
+
+      groupCounts[group]++;
+      lastDraw = group;
+      document.getElementById('result').textContent = `あなたは「グループ ${group}」です！`;
+      document.getElementById('undoBtn').disabled = false;
+      updateRemaining();
+    }
+
+    function undo() {
+      if (lastDraw && groupCounts[lastDraw] > 0) {
+        groupCounts[lastDraw]--;
+        document.getElementById('result').textContent = `前回のグループ ${lastDraw} をキャンセルしました。`;
+        lastDraw = null;
+        document.getElementById('undoBtn').disabled = true;
+        updateRemaining();
+      }
+    }
+
+    function updateRemaining() {
+      let status = "残り枠：\n";
+      for (const [g, count] of Object.entries(groupCounts)) {
+        status += `${g}: ${groupLimit - count}名\n`;
+      }
+      document.getElementById('remaining').textContent = status;
+    }
+  </script>
+</body>
+</html>
