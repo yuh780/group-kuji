@@ -121,15 +121,39 @@
     let drawHistory = [];
 
     function addGroup() {
-      const tbody = document.querySelector('#groupTable tbody');
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td><input type="text" class="groupName" placeholder="B"></td>
-        <td><input type="number" class="groupLimit" placeholder="8" min="1"></td>
-        <td><button class="deleteBtn" onclick="deleteRow(this)">削除</button></td>
-      `;
-      tbody.appendChild(tr);
-    }
+  const tbody = document.querySelector('#groupTable tbody');
+  const tr = document.createElement('tr');
+
+  const tdName = document.createElement('td');
+  const inputName = document.createElement('input');
+  inputName.type = 'text';
+  inputName.className = 'groupName';
+  inputName.placeholder = 'B';
+  tdName.appendChild(inputName);
+
+  const tdLimit = document.createElement('td');
+  const inputLimit = document.createElement('input');
+  inputLimit.type = 'number';
+  inputLimit.className = 'groupLimit';
+  inputLimit.placeholder = '8';
+  inputLimit.min = '1';
+  tdLimit.appendChild(inputLimit);
+
+  const tdDelete = document.createElement('td');
+  const deleteBtn = document.createElement('button');
+  deleteBtn.textContent = '削除';
+  deleteBtn.className = 'deleteBtn';
+  deleteBtn.onclick = function() {
+    deleteRow(deleteBtn);
+  };
+  tdDelete.appendChild(deleteBtn);
+
+  tr.appendChild(tdName);
+  tr.appendChild(tdLimit);
+  tr.appendChild(tdDelete);
+  tbody.appendChild(tr);
+}
+
 
     function deleteRow(btn) {
       const row = btn.closest('tr');
