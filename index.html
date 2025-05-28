@@ -5,41 +5,81 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>グループ振り分けくじ</title>
   <style>
-    * { box-sizing: border-box; }
-    body {
-      font-family: sans-serif;
-      text-align: center;
-      padding: 20px;
-      margin: 0;
+    :root {
+      --main-color: #2c3e50;
+      --accent-color: #3498db;
+      --bg-color: #f4f4f4;
     }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: var(--bg-color);
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+      color: var(--main-color);
+    }
+
     h1 {
       font-size: 1.8em;
       margin-bottom: 20px;
     }
-    input, button {
-      font-size: 1.2em;
-      padding: 10px;
-      margin: 8px 4px;
-      width: 90%;
-      max-width: 300px;
+
+    table {
+      margin: 0 auto;
+      width: 100%;
+      max-width: 600px;
+      border-collapse: collapse;
     }
+
+    th, td {
+      padding: 10px;
+    }
+
+    input[type="text"], input[type="number"] {
+      width: 100%;
+      padding: 8px;
+      font-size: 1em;
+    }
+
     button {
+      background-color: var(--accent-color);
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      font-size: 1em;
+      border-radius: 5px;
+      margin: 8px 4px;
       cursor: pointer;
     }
-    #result {
-      margin-top: 20px;
-      font-size: 1.5em;
-      font-weight: bold;
+
+    button:disabled {
+      background-color: #ccc;
+      cursor: default;
     }
+
+    .deleteBtn {
+      background-color: #e74c3c;
+    }
+
+    #result {
+      font-size: 1.6em;
+      font-weight: bold;
+      margin-top: 20px;
+    }
+
     #remaining {
       margin-top: 10px;
       font-size: 1em;
-      color: gray;
+      color: #555;
       white-space: pre-wrap;
     }
-    @media (min-width: 600px) {
-      input, button {
-        width: auto;
+
+    @media (max-width: 600px) {
+      table, input, button {
+        font-size: 1em;
       }
     }
   </style>
@@ -48,82 +88,62 @@
   <h1>グループ振り分けくじ</h1>
 
   <div id="setup">
-    <p>グループ数：<input type="number" id="groupCount" min="1" max="26" value="5"></p>
-    <p>各グループの定員：<input type="number" id="groupLimit" min="1" value="8"></p>
+    <table id="groupTable">
+      <thead>
+        <tr>
+          <th>グループ名</th>
+          <th>定員</th>
+          <th>削除</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><input type="text" class="groupName" placeholder="A"></td>
+          <td><input type="number" class="groupLimit" placeholder="8" min="1"></td>
+          <td><button class="deleteBtn" onclick="deleteRow(this)">削除</button></td>
+        </tr>
+      </tbody>
+    </table>
+    <button onclick="addGroup()">グループを追加</button>
     <button onclick="initialize()">設定して開始</button>
   </div>
 
   <div id="main" style="display:none;">
     <button onclick="draw()">くじをひく</button>
-    <button onclick="undo()" id="undoBtn" disabled>ひとつ前に戻す</button>
+    <button onclick="undo()" id="undoBtn" disabled>ひとつ戻す</button>
     <div id="result"></div>
     <div id="remaining"></div>
   </div>
 
   <script>
     let groupCounts = {};
-    let groupLimit = 8;
-    let lastDraw = null;
+    let groupLimits = {};
+    let drawHistory = [];
+
+    function addGroup() {
+      const tbody = document.querySelector('#groupTable tbody');
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><input type="text" class="groupName" placeholder="B"></td>
+        <td><input type="number" class="groupLimit" placeholder="8" min="1"></td>
+        <td><button class="deleteBtn" onclick="deleteRow(this)">削除</button></td>
+      `;
+      tbody.appendChild(tr);
+    }
+
+    function deleteRow(btn) {
+      const row = btn.closest('tr');
+      const tbody = row.parentElement;
+      if (tbody.children.length > 1) {
+        tbody.removeChild(row);
+      } else {
+        alert("最低1グループは必要です");
+      }
+    }
 
     function initialize() {
-      const groupCount = parseInt(document.getElementById('groupCount').value);
-      groupLimit = parseInt(document.getElementById('groupLimit').value);
-
-      if (isNaN(groupCount) || isNaN(groupLimit) || groupCount < 1 || groupCount > 26) {
-        alert("グループ数は1〜26、定員は1以上で入力してください");
-        return;
-      }
-
+      const names = document.querySelectorAll('.groupName');
+      const limits = document.querySelectorAll('.groupLimit');
       groupCounts = {};
-      const groupLabels = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
-      for (let i = 0; i < groupCount; i++) {
-        groupCounts[groupLabels[i]] = 0;
-      }
-
-      document.getElementById('setup').style.display = "none";
-      document.getElementById('main').style.display = "block";
-      document.getElementById('result').textContent = "";
-      document.getElementById('undoBtn').disabled = true;
-      updateRemaining();
-    }
-
-    function draw() {
-      const availableGroups = Object.entries(groupCounts)
-        .filter(([_, count]) => count < groupLimit);
-
-      if (availableGroups.length === 0) {
-        document.getElementById('result').textContent = "すべてのグループが満員です！";
-        document.getElementById('remaining').textContent = "";
-        return;
-      }
-
-      const randomIndex = Math.floor(Math.random() * availableGroups.length);
-      const group = availableGroups[randomIndex][0];
-
-      groupCounts[group]++;
-      lastDraw = group;
-      document.getElementById('result').textContent = `あなたは「グループ ${group}」です！`;
-      document.getElementById('undoBtn').disabled = false;
-      updateRemaining();
-    }
-
-    function undo() {
-      if (lastDraw && groupCounts[lastDraw] > 0) {
-        groupCounts[lastDraw]--;
-        document.getElementById('result').textContent = `前回のグループ ${lastDraw} をキャンセルしました。`;
-        lastDraw = null;
-        document.getElementById('undoBtn').disabled = true;
-        updateRemaining();
-      }
-    }
-
-    function updateRemaining() {
-      let status = "残り枠：\n";
-      for (const [g, count] of Object.entries(groupCounts)) {
-        status += `${g}: ${groupLimit - count}名\n`;
-      }
-      document.getElementById('remaining').textContent = status;
-    }
-  </script>
-</body>
-</html>
+      groupLimits = {};
+      drawHistory = [];
